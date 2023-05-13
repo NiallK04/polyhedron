@@ -1,4 +1,5 @@
 from math import pi
+import math
 from functools import reduce
 from operator import add
 from common.r3 import R3
@@ -159,9 +160,52 @@ class Polyedr:
                     # задание самой грани
                     self.facets.append(Facet(vertexes))
 
+    def calculate_visible_facets_area(self):
+        visible_facets_area = 0.0
+        for facet in self.facets:
+            fully_visible = True
+            for edge in self.edges:
+                if not self.is_edge_fully_visible(edge, facet):
+                    fully_visible = False
+                    break
+            if fully_visible and self.is_facet_angle_within_limit(facet) and self.is_facet_center_within_circle(facet):
+                visible_facets_area += self.calculate_facet_area(facet)
+        return visible_facets_area
+
+    def is_edge_fully_visible(self, edge, facet):
+        for vertex in facet.vertexes:
+            normal = facet.h_normal()
+            if edge.intersect_edge_with_normal(vertex, normal).is_degenerate():
+                return False
+        return True
+
+    def is_facet_angle_within_limit(self, facet):
+        v_normals = facet.v_normals()
+        for normal in v_normals:
+            angle = math.acos(normal.dot(self.V) / (normal.norm() * self.V.norm()))
+            if angle > math.pi / 7:
+                return False
+        return True
+
+    def is_facet_center_within_circle(self, facet):
+        center = facet.center()
+        return center.x**2 + center.y**2 < 4
+
+    def calculate_facet_area(self, facet):
+        v_normals = facet.v_normals()
+        area = 0.0
+        for i in range(len(facet.vertexes)):
+            v1 = facet.vertexes[i]
+            v2 = facet.vertexes[(i + 1) % len(facet.vertexes)]
+            area += v1.cross(v2).norm() / 2
+        return area
+
     # Метод изображения полиэдра
     def draw(self, tk):
         tk.clean()
+        visible_facets_area = self.calculate_visible_facets_area()
+        print("Сумма площадей граней с полностью видимыми рёбрами:", visible_facets_area)
+
         for e in self.edges:
             for f in self.facets:
                 e.shadow(f)
