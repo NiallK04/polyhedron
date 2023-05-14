@@ -1,5 +1,4 @@
-from math import pi
-import math
+from math import pi, acos
 from functools import reduce
 from operator import add
 from common.r3 import R3
@@ -12,6 +11,9 @@ class Segment:
 
     def __init__(self, beg, fin):
         self.beg, self.fin = beg, fin
+
+    def __repr__(self):
+        return f"{self.beg}, {self.fin}"
 
     # Отрезок вырожден?
     def is_degenerate(self):
@@ -33,6 +35,9 @@ class Segment:
             Segment(self.beg if self.beg > other.fin else other.fin, self.fin)]
 
 
+
+
+
 class Edge:
     """ Ребро полиэдра """
     # Начало и конец стандартного одномерного отрезка
@@ -40,9 +45,14 @@ class Edge:
 
     # Параметры конструктора: начало и конец ребра (точки в R3)
     def __init__(self, beg, fin):
+        self.vid = False
         self.beg, self.fin = beg, fin
         # Список «просветов»
         self.gaps = [Segment(Edge.SBEG, Edge.SFIN)]
+        self.s = self.gaps
+
+    def __repr__(self):
+        return f"{self.beg}, {self.fin}"
 
     # Учёт тени от одной грани
     def shadow(self, facet):
@@ -66,9 +76,15 @@ class Edge:
         self.gaps = [
             s for s in reduce(add, gaps, []) if not s.is_degenerate()]
 
+
     # Преобразование одномерных координат в трёхмерные
     def r3(self, t):
         return self.beg * (Edge.SFIN - t) + self.fin * t
+
+    def is_fully_visible(self):
+        if len(self.gaps) != 0 and self.gaps == self.s:
+            self.vid = True
+
 
     # Пересечение ребра с полупространством, задаваемым точкой (a)
     # на плоскости и вектором внешней нормали (n) к ней
@@ -82,16 +98,40 @@ class Edge:
         return Segment(Edge.SBEG, x) if f0 < 0.0 else Segment(x, Edge.SFIN)
 
 
+
+
 class Facet:
     """ Грань полиэдра """
     # Параметры конструктора: список вершин
 
     def __init__(self, vertexes):
+        self.vid = False
         self.vertexes = vertexes
+        self.edges = []
+        for n in range(len(vertexes)):
+            self.edges.append(Edge(vertexes[n - 1], vertexes[n]))
+
+    def upd(self, edges_mod):
+        tmp = []
+        for i in self.edges:
+            for j in edges_mod:
+                if i.beg == j.beg and i.fin == j.fin:
+                    tmp.append(j)
+        self.edges = tmp
+
+        self.is_fully_visible()
+
 
     # «Вертикальна» ли грань?
     def is_vertical(self):
         return self.h_normal().dot(Polyedr.V) == 0.0
+
+    def is_fully_visible(self):
+        k = 0
+        for i in self.edges:
+            if i.vid:
+                 k += 1
+        self.vid = (k == len(self.edges))
 
     # Нормаль к «горизонтальному» полупространству
     def h_normal(self):
@@ -99,6 +139,14 @@ class Facet:
             self.vertexes[1] - self.vertexes[0]).cross(
             self.vertexes[2] - self.vertexes[0])
         return n * (-1.0) if n.dot(Polyedr.V) < 0.0 else n
+
+    def is_angle_ok(self):
+        return acos(abs((self.h_normal().dot(Polyedr.V)) / \
+        (abs(self.h_normal())*abs(Polyedr.V)))) <= pi/7
+
+
+    def is_center_ok(self):
+        return self.center().x ** 2 + self.center().y ** 2 < 4
 
     # Нормали к «вертикальным» полупространствам, причём k-я из них
     # является нормалью к грани, которая содержит ребро, соединяющее
@@ -117,6 +165,15 @@ class Facet:
         return sum(self.vertexes, R3(0.0, 0.0, 0.0)) * \
             (1.0 / len(self.vertexes))
 
+    def area(self):
+        area = 0.0
+        for i in range(len(self.vertexes) - 2):
+            v1 = self.vertexes[0]
+            v2 = self.vertexes[i + 1]
+            v3 = self.vertexes[i + 2]
+            area += 0.5 * abs((v2 - v1).cross(v3 - v1))
+        return area
+
 
 class Polyedr:
     """ Полиэдр """
@@ -125,7 +182,7 @@ class Polyedr:
 
     # Параметры конструктора: файл, задающий полиэдр
     def __init__(self, file):
-
+        self.area = 0
         # списки вершин, рёбер и граней полиэдра
         self.vertexes, self.edges, self.facets = [], [], []
 
@@ -157,57 +214,26 @@ class Polyedr:
                     # задание рёбер грани
                     for n in range(size):
                         self.edges.append(Edge(vertexes[n - 1], vertexes[n]))
+
                     # задание самой грани
                     self.facets.append(Facet(vertexes))
+            for e in self.edges:
+                for f in self.facets:
+                    e.shadow(f)
+                e.is_fully_visible()
+            for f in self.facets:
+                f.upd(self.edges)
 
-    def calculate_visible_facets_area(self):
-        visible_facets_area = 0.0
-        for facet in self.facets:
-            fully_visible = True
-            for edge in self.edges:
-                if not self.is_edge_fully_visible(edge, facet):
-                    fully_visible = False
-                    break
-            if fully_visible and self.is_facet_angle_within_limit(facet) and self.is_facet_center_within_circle(facet):
-                visible_facets_area += self.calculate_facet_area(facet)
-        return visible_facets_area
 
-    def is_edge_fully_visible(self, edge, facet):
-        for vertex in facet.vertexes:
-            normal = facet.h_normal()
-            if edge.intersect_edge_with_normal(vertex, normal).is_degenerate():
-                return False
-        return True
-
-    def is_facet_angle_within_limit(self, facet):
-        v_normals = facet.v_normals()
-        for normal in v_normals:
-            angle = math.acos(normal.dot(self.V) / (normal.norm() * self.V.norm()))
-            if angle > math.pi / 7:
-                return False
-        return True
-
-    def is_facet_center_within_circle(self, facet):
-        center = facet.center()
-        return center.x**2 + center.y**2 < 4
-
-    def calculate_facet_area(self, facet):
-        v_normals = facet.v_normals()
-        area = 0.0
-        for i in range(len(facet.vertexes)):
-            v1 = facet.vertexes[i]
-            v2 = facet.vertexes[(i + 1) % len(facet.vertexes)]
-            area += v1.cross(v2).norm() / 2
-        return area
-
+    def mod(self):
+        for i in self.facets:
+            if i.vid and i.is_angle_ok() and i.is_center_ok():
+                self.area += i.area()
+        return self.area
     # Метод изображения полиэдра
     def draw(self, tk):
         tk.clean()
-        visible_facets_area = self.calculate_visible_facets_area()
-        print("Сумма площадей граней с полностью видимыми рёбрами:", visible_facets_area)
-
         for e in self.edges:
-            for f in self.facets:
-                e.shadow(f)
             for s in e.gaps:
                 tk.draw_line(e.r3(s.beg), e.r3(s.fin))
+        self.mod()
