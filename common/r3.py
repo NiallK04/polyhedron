@@ -1,4 +1,4 @@
-from math import sin, cos
+from math import sin, cos, sqrt
 
 
 class R3:
@@ -19,6 +19,12 @@ class R3:
     # Умножение на число
     def __mul__(self, k):
         return R3(k * self.x, k * self.y, k * self.z)
+
+    def __abs__(self):
+        return sqrt(self.x**2 + self.y**2  + self.z**2)
+
+    def __repr__(self):
+        return f"x = {self.x}, y = {self.y}, z = {self.z}"
 
     # Поворот вокруг оси Oz
     def rz(self, fi):
@@ -44,13 +50,5 @@ class R3:
 
 
 if __name__ == "__main__":
-    x = R3(1.0, 1.0, 1.0)
-    print("x", type(x), x.__dict__)
-    y = x + R3(1.0, -1.0, 0.0)
-    print("y", type(y), y.__dict__)
-    y = y.rz(1.0)
-    print("y", type(y), y.__dict__)
-    u = x.dot(y)
-    print("u", type(u), u)
-    v = x.cross(y)
-    print("v", type(v), v.__dict__)
+    x = R3(2.0, 2.0, 1.0)
+    print(x)
