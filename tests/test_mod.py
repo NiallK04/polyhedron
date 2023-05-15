@@ -34,9 +34,9 @@ class Test_1:
 
 class Test_area:
     def test1(self):
-        Polyedr1 = Polyedr("data/test_cube_1.geom")
+        Polyedr1 = Polyedr("data/test_pir.geom")
         assert Polyedr1.area == approx(14412)
 
     def test2(self):
-        Polyedr1 = Polyedr("data/test_tri.geom")
-        assert Polyedr1.area == approx(7200)
+        Polyedr2 = Polyedr("data/test_tri.geom")
+        assert Polyedr2.area == approx(7200)
