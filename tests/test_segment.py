@@ -13,6 +13,8 @@ def seg_approx(self, other):
         self.beg == approx(other.fin) and self.fin == approx(other.beg)
 
 
+
+
 setattr(Segment, 'approx', seg_approx)
 
 

@@ -86,6 +86,7 @@ class Edge:
             self.vid = True
 
 
+
     # Пересечение ребра с полупространством, задаваемым точкой (a)
     # на плоскости и вектором внешней нормали (n) к ней
     def intersect_edge_with_normal(self, a, n):
@@ -111,6 +112,9 @@ class Facet:
         for n in range(len(vertexes)):
             self.edges.append(Edge(vertexes[n - 1], vertexes[n]))
 
+    def get_c(self, c):
+        self.c = c
+
     def upd(self, edges_mod):
         tmp = []
         for i in self.edges:
@@ -131,8 +135,8 @@ class Facet:
         for i in self.edges:
             if i.vid:
                  k += 1
-        self.vid = (k == len(self.edges))
 
+        self.vid = (k == len(self.edges))
     # Нормаль к «горизонтальному» полупространству
     def h_normal(self):
         n = (
@@ -146,7 +150,7 @@ class Facet:
 
 
     def is_center_ok(self):
-        return self.center().x ** 2 + self.center().y ** 2 < 4
+        return self.center().x ** 2 + self.center().y ** 2 < 4 * self.c ** 2
 
     # Нормали к «вертикальным» полупространствам, причём k-я из них
     # является нормалью к грани, которая содержит ребро, соединяющее
@@ -216,17 +220,22 @@ class Polyedr:
                         self.edges.append(Edge(vertexes[n - 1], vertexes[n]))
 
                     # задание самой грани
-                    self.facets.append(Facet(vertexes))
+                    facet1 = Facet(vertexes)
+                    self.facets.append(facet1)
+                    facet1.get_c(c)
+
             for e in self.edges:
                 for f in self.facets:
                     e.shadow(f)
                 e.is_fully_visible()
             for f in self.facets:
                 f.upd(self.edges)
+            self.mod()
 
 
     def mod(self):
         for i in self.facets:
+            print(i.vid, i.is_angle_ok(), i.is_center_ok())
             if i.vid and i.is_angle_ok() and i.is_center_ok():
                 self.area += i.area()
         return self.area
@@ -236,4 +245,3 @@ class Polyedr:
         for e in self.edges:
             for s in e.gaps:
                 tk.draw_line(e.r3(s.beg), e.r3(s.fin))
-        self.mod()

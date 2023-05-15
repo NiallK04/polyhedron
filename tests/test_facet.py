@@ -10,6 +10,8 @@ def is_collinear(self, other):
     return t == approx(1.0)
 
 
+
+
 setattr(R3, 'is_collinear', is_collinear)
 
 
