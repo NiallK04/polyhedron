@@ -228,7 +228,6 @@ class Polyedr:
 
     def mod(self):
         for i in self.facets:
-            print(i.vid, i.is_angle_ok(), i.is_center_ok())
             if i.vid and i.is_angle_ok() and i.is_center_ok():
                 self.area += i.area()
         return self.area
