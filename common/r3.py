@@ -21,7 +21,7 @@ class R3:
         return R3(k * self.x, k * self.y, k * self.z)
 
     def __abs__(self):
-        return sqrt(self.x**2 + self.y**2  + self.z**2)
+        return sqrt(self.x**2 + self.y**2 + self.z**2)
 
     def __repr__(self):
         return f"x = {self.x}, y = {self.y}, z = {self.z}"

@@ -5,11 +5,9 @@ from shadow.polyedr import Facet
 
 
 def is_collinear(self, other):
-    t = self.dot(other) / sqrt(self.x**2+self.y**2+self.z**2) / \
-        sqrt(other.x**2+other.y**2+other.z**2)
+    t = self.dot(other) / sqrt(self.x**2 + self.y**2 + self.z**2) / \
+        sqrt(other.x**2 + other.y**2 + other.z**2)
     return t == approx(1.0)
-
-
 
 
 setattr(R3, 'is_collinear', is_collinear)

@@ -35,9 +35,6 @@ class Segment:
             Segment(self.beg if self.beg > other.fin else other.fin, self.fin)]
 
 
-
-
-
 class Edge:
     """ Ребро полиэдра """
     # Начало и конец стандартного одномерного отрезка
@@ -76,8 +73,8 @@ class Edge:
         self.gaps = [
             s for s in reduce(add, gaps, []) if not s.is_degenerate()]
 
-
     # Преобразование одномерных координат в трёхмерные
+
     def r3(self, t):
         return self.beg * (Edge.SFIN - t) + self.fin * t
 
@@ -85,10 +82,9 @@ class Edge:
         if len(self.gaps) != 0 and self.gaps == self.s:
             self.vid = True
 
-
-
     # Пересечение ребра с полупространством, задаваемым точкой (a)
     # на плоскости и вектором внешней нормали (n) к ней
+
     def intersect_edge_with_normal(self, a, n):
         f0, f1 = n.dot(self.beg - a), n.dot(self.fin - a)
         if f0 >= 0.0 and f1 >= 0.0:
@@ -97,8 +93,6 @@ class Edge:
             return Segment(Edge.SBEG, Edge.SFIN)
         x = - f0 / (f1 - f0)
         return Segment(Edge.SBEG, x) if f0 < 0.0 else Segment(x, Edge.SFIN)
-
-
 
 
 class Facet:
@@ -125,8 +119,8 @@ class Facet:
 
         self.is_fully_visible()
 
-
     # «Вертикальна» ли грань?
+
     def is_vertical(self):
         return self.h_normal().dot(Polyedr.V) == 0.0
 
@@ -134,10 +128,11 @@ class Facet:
         k = 0
         for i in self.edges:
             if i.vid:
-                 k += 1
+                k += 1
 
         self.vid = (k == len(self.edges))
     # Нормаль к «горизонтальному» полупространству
+
     def h_normal(self):
         n = (
             self.vertexes[1] - self.vertexes[0]).cross(
@@ -145,9 +140,8 @@ class Facet:
         return n * (-1.0) if n.dot(Polyedr.V) < 0.0 else n
 
     def is_angle_ok(self):
-        return acos(abs((self.h_normal().dot(Polyedr.V)) / \
-        (abs(self.h_normal())*abs(Polyedr.V)))) <= pi/7
-
+        return acos(abs((self.h_normal().dot(Polyedr.V)) /
+                        (abs(self.h_normal()) * abs(Polyedr.V)))) <= pi / 7
 
     def is_center_ok(self):
         return self.center().x ** 2 + self.center().y ** 2 < 4 * self.c ** 2
@@ -232,7 +226,6 @@ class Polyedr:
                 f.upd(self.edges)
             self.mod()
 
-
     def mod(self):
         for i in self.facets:
             print(i.vid, i.is_angle_ok(), i.is_center_ok())
@@ -240,6 +233,7 @@ class Polyedr:
                 self.area += i.area()
         return self.area
     # Метод изображения полиэдра
+
     def draw(self, tk):
         tk.clean()
         for e in self.edges:
